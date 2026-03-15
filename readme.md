@@ -35,8 +35,6 @@ MazeSolver/
 ├── icons/
 ├── maze_graph/
 ├── demo_images/
-├── backup/
-│   └── pre_refactor_20260315/
 ├── requirements.txt
 └── README.md
 ```
@@ -136,6 +134,5 @@ git push -u origin main
 
 ## Notes
 
-- `backup/pre_refactor_20260315/` stores the pre-refactor version.
 - `maze_graph/` stores the built-in sample mazes.
 - `icons/` stores the GUI button and status assets.

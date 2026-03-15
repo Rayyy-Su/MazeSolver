@@ -10,8 +10,30 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from backend.services.maze_service import MazeService
+from backend.services.maze_service import MazeService, SolveArtifacts
 from backend.settings import SAMPLE_MAZES
+
+
+@st.cache_data(show_spinner=False)
+def solve_maze_cached(sample_key, start_pos, end_pos):
+    sample = next(maze for maze in SAMPLE_MAZES if maze.key == sample_key)
+    service = MazeService()
+    service.load_maze(sample.path)
+    service.begin_point_selection()
+    service.handle_point_click(start_pos)
+    service.handle_point_click(end_pos)
+    artifacts = service.solve()
+
+    return {
+        "display_image": service.model.display_image.copy(),
+        "maze_image": service.model.maze_image.copy(),
+        "result_image": artifacts.solved_image if artifacts.solved else artifacts.visited_image,
+        "solve_time": artifacts.solve_time,
+        "total_time": artifacts.total_time,
+        "path": artifacts.path,
+        "visited_nodes": artifacts.visited_nodes,
+        "solved": artifacts.solved,
+    }
 
 
 def initialize_state():
@@ -78,8 +100,30 @@ def handle_reset():
 
 
 def handle_start():
-    artifacts = st.session_state.service.solve()
+    start_pos = st.session_state.service.model.start_pos
+    end_pos = st.session_state.service.model.end_pos
+    if start_pos is None or end_pos is None:
+        return
+
+    cached_solution = solve_maze_cached(
+        st.session_state.selected_maze_key,
+        start_pos,
+        end_pos,
+    )
+
+    artifacts = SolveArtifacts(
+        path=cached_solution["path"],
+        visited_nodes=cached_solution["visited_nodes"],
+        solve_time=cached_solution["solve_time"],
+        solved_image=cached_solution["result_image"] if cached_solution["solved"] else cached_solution["display_image"],
+        visited_image=cached_solution["maze_image"],
+        total_time=cached_solution["total_time"],
+        solved=cached_solution["solved"],
+    )
+
     st.session_state.solve_artifacts = artifacts
+    st.session_state.display_image = cached_solution["display_image"]
+    st.session_state.maze_image = cached_solution["maze_image"]
     st.session_state.result_image = None
     st.session_state.time_value = artifacts.solve_time
     st.session_state.status = "WAIT"
