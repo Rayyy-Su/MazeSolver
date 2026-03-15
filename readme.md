@@ -134,9 +134,3 @@ python -m frontend.desktop.app
 ```bash
 streamlit run frontend/web/app.py
 ```
-
-Then open the local URL shown in the terminal, usually:
-
-```text
-http://127.0.0.1:8501
-```
