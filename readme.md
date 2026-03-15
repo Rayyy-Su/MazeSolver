@@ -1,89 +1,141 @@
-# Maze Image Solver
+# MazeSolver
 
-A tool that solves maze images using image preprocessing, skeletonization, and BFS.
+MazeSolver is now organized into a clear `frontend / backend` structure:
 
-## Description
+- `frontend/desktop`: the local Tkinter GUI
+- `frontend/web`: the Streamlit live demo for browser use
+- `backend`: the shared maze-processing logic used by both frontends
 
-This project preprocesses a maze image, extracts its skeleton, and applies Breadth-First Search (BFS) to quickly find the solution path.
+The desktop GUI and browser demo use the same interaction flow:
+
+1. `Open`
+2. `Set`
+3. Click once for the start point
+4. Click once for the end point
+5. `Start`
+6. `Reset`
+
+## Project Structure
+
+```text
+MazeSolver/
+├── backend/
+│   ├── models/
+│   │   └── maze_model.py
+│   ├── services/
+│   │   └── maze_service.py
+│   └── settings.py
+├── frontend/
+│   ├── desktop/
+│   │   ├── app.py
+│   │   ├── dialogs.py
+│   │   └── views.py
+│   └── web/
+│       └── app.py
+├── icons/
+├── maze_graph/
+├── demo_images/
+├── backup/
+│   └── pre_refactor_20260315/
+├── requirements.txt
+└── README.md
+```
 
 ## Features
 
-- Image preprocessing to build up boundary so that the path won't go through outside the maze
-- Skeletonization for path simplification
-- BFS algorithm for fast pathfinding
-- Visualization of the solved maze
+- Two built-in maze samples shared by desktop and web
+- Otsu thresholding and edge barrier cleanup
+- Skeletonization
+- BFS pathfinding
+- A live demo that follows the same `Open / Set / Start / Reset` workflow as the local GUI
 
-## Demo
+## Local Setup
 
-![Demo](demo_images/demo1.png)
-![Demo](demo_images/demo2.png)
+Install dependencies:
 
-## How to Use
+```bash
+pip install -r requirements.txt
+```
 
-Follow these steps to solve a maze:
+## Run The Desktop GUI
 
-0. Execute **MazeApp.py**
-1. Click **Open** to load a maze image.
-2. Click **Set** to enable start and end point selection.
-3. Click the left mouse button on the maze to mark the **start point**.
-4. Click the left mouse button on the maze to mark the **end point**.
-5. Click **Start** to run the solver and visualize the path.
-6. Click **Reset** to clear the start and end points and try again.
+```bash
+python -m frontend.desktop.app
+```
 
-# Techique
+## Run The Web Demo
 
-## Otsu
+```bash
+streamlit run frontend/web/app.py
+```
 
-### 1.Histogram
+Then open the local URL shown in the terminal, usually:
 
-$$
-p(i) = \frac{\text{number of pixels with intensity } i }{N}, \quad i = 0, 1, \dots, 255
-$$
+```text
+http://127.0.0.1:8501
+```
 
-where $N$ is the total number of pixels.
+## Deploy The Live Demo
 
----
+This project is ready for Streamlit Community Cloud.
 
-### 2. Try all possible thresholds $t$
+1. Push the repository to GitHub.
+2. Sign in to Streamlit Community Cloud.
+3. Create a new app from your GitHub repository.
+4. Choose the branch you want to deploy.
+5. Set the main file path to `frontend/web/app.py`.
+6. Deploy the app.
+7. Copy the generated Streamlit URL.
+8. Use that URL for the `Live demo` button in your personal portfolio website.
 
-**compute probabilities (weights)**
+## How To Push This Repo To GitHub
 
-$$
-\omega_0(t) = \sum_{i=0}^{t} p(i),
-\quad
-\omega_1(t) = \sum_{i=t+1}^{L-1} p(i)
-$$
+If this folder is already connected to GitHub:
 
-**compute means**
+```bash
+git status
+git add .
+git commit -m "Refactor MazeSolver into frontend/backend structure"
+git push origin main
+```
 
-$$
-\mu_0(t) = \frac{1}{\omega_0(t)} \sum_{i=0}^{t} i \cdot p(i),
-\quad
-\mu_1(t) = \frac{1}{\omega_1(t)} \sum_{i=t+1}^{L-1} i \cdot p(i)
-$$
+If your default branch is `master`, use:
 
-**compute variances**
+```bash
+git push origin master
+```
 
-$$
-\sigma_b^2(t) = \omega_0(t)\,\omega_1(t)\,\big(\mu_0(t) - \mu_1(t)\big)^2
-$$
+If this folder is not connected to a GitHub repository yet:
 
----
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+git push -u origin main
+```
 
-### 3. Find the optimal threshold
+## Detailed GitHub Workflow
 
-$$
-t^* = \underset{t}{\arg\max}\ \sigma_b^2(t)
-$$
+1. Go to GitHub and create a new empty repository.
+2. Copy the repository URL from GitHub.
+3. Open a terminal and go to the MazeSolver folder.
+4. Run `git status` to check what will be committed.
+5. Run `git add .` to stage the project files.
+6. Run `git commit -m "Refactor MazeSolver into frontend/backend structure"`.
+7. Run `git branch` to check your current branch name.
+8. If needed, rename the branch with `git branch -M main`.
+9. Run `git remote -v` to see whether a remote is already configured.
+10. If no remote exists, run `git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git`.
+11. Run `git push -u origin main`.
+12. If GitHub rejects password login, generate a Personal Access Token in GitHub settings and use that token instead.
+13. Refresh the GitHub repository page and confirm all files are visible.
+14. Connect the same repo and branch in Streamlit Community Cloud.
+15. After deployment, copy the Streamlit app URL into your website's `Live demo` button.
 
----
+## Notes
 
-### 4. Apply the thresholding
-
-$$
-dst(x, y) =
-\begin{cases}
-255 & \text{if } I(x, y) > t^* \\
-0   & \text{if } I(x, y) \leq t^*
-\end{cases}
-$$
+- `backup/pre_refactor_20260315/` stores the pre-refactor version.
+- `maze_graph/` stores the built-in sample mazes.
+- `icons/` stores the GUI button and status assets.

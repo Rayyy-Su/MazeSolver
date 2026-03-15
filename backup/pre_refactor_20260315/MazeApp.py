@@ -1,8 +1,8 @@
 # main.py
 import tkinter as tk
-from tkinter import filedialog
 from PIL import Image, ImageTk,  ImageDraw
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -14,10 +14,22 @@ from MainView import MainView
 class MazeApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        
 
         self.model = MazeModel()
         self.view = MainView(self, self) 
+        self.sample_dir = Path(__file__).parent / "maze_graph"
+        self.sample_mazes = [
+            {
+                "label": "Maze 1",
+                "description": "Rectangular maze with a cleaner corridor layout.",
+                "path": self.sample_dir / "maze1.jpg",
+            },
+            {
+                "label": "Maze 2",
+                "description": "Circular maze with denser turns and a more complex route.",
+                "path": self.sample_dir / "maze2.jpg",
+            },
+        ]
 
         self.title("Maze Solver (Refactored)")
         self.geometry("1520x780+0+0")
@@ -32,11 +44,87 @@ class MazeApp(tk.Tk):
         self.view.image_display_frame.image_label.bind("<Button-1>", self.on_image_click)
 
     def open_file(self):
-        file_path = filedialog.askopenfilename(
-            filetypes=[("Image Files", "*.jpg *.jpeg *.png *.tif *.tiff")]
-        )
-        if not file_path:
-            return
+        selector = tk.Toplevel(self)
+        selector.title("Choose a Maze")
+        selector.geometry("760x430")
+        selector.configure(bg="#1c1d20")
+        selector.resizable(False, False)
+        selector.transient(self)
+        selector.grab_set()
+        selector.grid_columnconfigure((0, 1), weight=1)
+
+        tk.Label(
+            selector,
+            text="Choose a sample maze",
+            bg="#1c1d20",
+            fg="white",
+            font=("Arial", 18, "bold"),
+        ).grid(row=0, column=0, columnspan=2, pady=(22, 8))
+
+        tk.Label(
+            selector,
+            text="Pick the maze style you want to solve.",
+            bg="#1c1d20",
+            fg="#cbd5e1",
+            font=("Arial", 11),
+        ).grid(row=1, column=0, columnspan=2, pady=(0, 18))
+
+        selector.preview_images = []
+        for index, maze in enumerate(self.sample_mazes):
+            preview = Image.open(maze["path"]).convert("RGB")
+            preview.thumbnail((280, 210), Image.Resampling.LANCZOS)
+            preview_image = ImageTk.PhotoImage(preview)
+            selector.preview_images.append(preview_image)
+
+            card = tk.Frame(
+                selector,
+                bg="#2c313c",
+                highlightbackground="#4b5563",
+                highlightthickness=1,
+                cursor="hand2",
+            )
+            card.grid(row=2, column=index, padx=20, pady=(0, 20), sticky="nsew")
+
+            image_label = tk.Label(
+                card,
+                image=preview_image,
+                bg="#2c313c",
+                cursor="hand2",
+            )
+            image_label.pack(padx=14, pady=(14, 10))
+
+            title_label = tk.Label(
+                card,
+                text=maze["label"],
+                bg="#2c313c",
+                fg="white",
+                font=("Arial", 14, "bold"),
+                cursor="hand2",
+            )
+            title_label.pack(pady=(0, 6))
+
+            desc_label = tk.Label(
+                card,
+                text=maze["description"],
+                bg="#2c313c",
+                fg="#cbd5e1",
+                font=("Arial", 10),
+                wraplength=250,
+                justify="center",
+                cursor="hand2",
+            )
+            desc_label.pack(padx=16, pady=(0, 16))
+
+            widgets = (card, image_label, title_label, desc_label)
+            for widget in widgets:
+                widget.bind(
+                    "<Button-1>",
+                    lambda _event, maze_path=maze["path"], dialog=selector: self._load_sample_maze(maze_path, dialog),
+                )
+
+    def _load_sample_maze(self, file_path, dialog):
+        if dialog is not None:
+            dialog.destroy()
 
         success, display_img, maze_img = self.model.load_image(file_path)
         if success:
@@ -130,7 +218,7 @@ class MazeApp(tk.Tk):
         )
 
         if end_index < len(visited_nodes):
-            self.after(1, self._animate_search, visited_nodes, final_path, end_index, chunk_size)
+            self.after(30, self._animate_search, visited_nodes, final_path, end_index, chunk_size)
         else:
             self._animate_path(final_path)
 
