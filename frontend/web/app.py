@@ -13,6 +13,8 @@ if str(PROJECT_ROOT) not in sys.path:
 from backend.services.maze_service import MazeService, SolveArtifacts
 from backend.settings import SAMPLE_MAZES
 
+GRAPH_DISPLAY_WIDTH = 520
+
 
 @st.cache_data(show_spinner=False)
 def solve_maze_cached(sample_key, start_pos, end_pos):
@@ -156,26 +158,43 @@ def render_status():
     metrics[2].metric("Point Mode", "ON" if st.session_state.point_mode else "OFF")
 
 
+def graph_render_width(image):
+    if image is None:
+        return GRAPH_DISPLAY_WIDTH
+    return min(image.width, GRAPH_DISPLAY_WIDTH)
+
+
+def scale_click_point(click, image, rendered_width):
+    rendered_height = max(round(image.height * rendered_width / image.width), 1)
+    scale_x = image.width / rendered_width
+    scale_y = image.height / rendered_height
+
+    x = min(max(round(click["x"] * scale_x), 0), image.width - 1)
+    y = min(max(round(click["y"] * scale_y), 0), image.height - 1)
+    return (x, y)
+
+
 def render_canvas():
     left, right = st.columns(2)
     left_placeholder = left.empty()
     right_placeholder = right.empty()
 
     with left:
-        st.subheader("Original Image")
+        st.subheader("Original Graph")
         if st.session_state.display_image is None:
             st.info("Press Open to load one of the sample mazes.")
             return left_placeholder, right_placeholder
 
         if st.session_state.point_mode:
+            display_width = graph_render_width(st.session_state.display_image)
             with left_placeholder.container():
                 click = streamlit_image_coordinates(
                     st.session_state.display_image,
                     key="maze-click-canvas",
-                    width=st.session_state.display_image.width,
+                    width=display_width,
                 )
             if click:
-                point = (click["x"], click["y"])
+                point = scale_click_point(click, st.session_state.display_image, display_width)
                 if point != st.session_state.last_click:
                     st.session_state.last_click = point
                     updated_image, maze_image, completed, elapsed_time = st.session_state.service.handle_point_click(point)
@@ -187,16 +206,16 @@ def render_canvas():
                         st.session_state.time_value = elapsed_time
                     st.rerun()
         else:
-            left_placeholder.image(st.session_state.display_image, use_container_width=False)
+            left_placeholder.image(st.session_state.display_image, width=graph_render_width(st.session_state.display_image))
 
         st.caption("Click on the original image after pressing Set to place the start and end points.")
 
     with right:
-        st.subheader("Processed / Result")
+        st.subheader("Result Graph")
         if st.session_state.result_image is not None:
-            right_placeholder.image(st.session_state.result_image, use_container_width=True)
+            right_placeholder.image(st.session_state.result_image, width=graph_render_width(st.session_state.result_image))
         elif st.session_state.maze_image is not None:
-            right_placeholder.image(st.session_state.maze_image, use_container_width=True)
+            right_placeholder.image(st.session_state.maze_image, width=graph_render_width(st.session_state.maze_image))
         else:
             st.info("The processed maze will appear here.")
 
@@ -225,7 +244,7 @@ def animate_solution(left_placeholder, right_placeholder):
             )
             draw_maze.point((col, row), fill=color)
 
-        right_placeholder.image(animated_maze, use_container_width=True)
+        right_placeholder.image(animated_maze, width=graph_render_width(animated_maze))
         time.sleep(0.03)
 
     if artifacts.solved:
@@ -234,7 +253,7 @@ def animate_solution(left_placeholder, right_placeholder):
             start_point = (artifacts.path[index][1], artifacts.path[index][0])
             end_point = (artifacts.path[index + 1][1], artifacts.path[index + 1][0])
             draw_display.line([start_point, end_point], fill="#009900", width=5)
-            left_placeholder.image(animated_display, use_container_width=False)
+            left_placeholder.image(animated_display, width=graph_render_width(animated_display))
             time.sleep(0.001)
 
     st.session_state.display_image = animated_display

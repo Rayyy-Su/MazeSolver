@@ -25,14 +25,33 @@ class ImageDisplayFrame(tk.Frame):
     def __init__(self, master):
         super().__init__(master, bg=BACKGROUND)
         self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure((0, 1), weight=1)
-        self.image_label = self._create_image_label()
-        self.maze_image_label = self._create_image_label()
-        self.image_label.grid(row=0, column=0, padx=5, pady=5)
-        self.maze_image_label.grid(row=0, column=1, padx=5, pady=5)
+        self.grid_columnconfigure((0, 1), weight=1, uniform="image-pane")
 
-    def _create_image_label(self):
-        return tk.Label(master=self, image=ImageTk.PhotoImage(Image.new("RGB", (512, 512), "white")), width=512, height=512)
+        original_frame = self._create_image_panel("Original Graph")
+        result_frame = self._create_image_panel("Result Graph")
+
+        original_frame.grid(row=0, column=0, padx=12, pady=5, sticky="N")
+        result_frame.grid(row=0, column=1, padx=12, pady=5, sticky="N")
+
+        self.image_label = self._create_image_label(original_frame)
+        self.maze_image_label = self._create_image_label(result_frame)
+        self.image_label.grid(row=1, column=0, padx=5, pady=(8, 5), sticky="N")
+        self.maze_image_label.grid(row=1, column=0, padx=5, pady=(8, 5), sticky="N")
+
+    def _create_image_panel(self, title):
+        frame = tk.Frame(self, bg=BACKGROUND)
+        frame.grid_columnconfigure(0, weight=1)
+        tk.Label(
+            frame,
+            text=title,
+            bg=BACKGROUND,
+            fg="white",
+            font=("Arial", 18, "bold"),
+        ).grid(row=0, column=0, pady=(0, 4))
+        return frame
+
+    def _create_image_label(self, parent):
+        return tk.Label(parent, image=ImageTk.PhotoImage(Image.new("RGB", (512, 512), "white")), width=512, height=512)
 
     def update_image(self, label_widget, pil_image):
         if pil_image is None:
