@@ -128,7 +128,7 @@ def handle_start():
     st.session_state.maze_image = cached_solution["maze_image"]
     st.session_state.result_image = None
     st.session_state.time_value = artifacts.solve_time
-    st.session_state.status = "WAIT"
+    st.session_state.status = "RUN"
     st.session_state.animate_pending = True
 
 
@@ -273,11 +273,12 @@ def main():
     st.caption("The web demo follows the same interaction flow as the local GUI: Open -> Set -> click start/end -> Start -> Reset.")
 
     render_controls()
-    render_status()
     left_placeholder, right_placeholder = render_canvas()
 
     if st.session_state.animate_pending and st.session_state.display_image is not None:
         animate_solution(left_placeholder, right_placeholder)
+
+    render_status()
 
     with st.expander("How to use"):
         st.write("1. Choose Maze 1 or Maze 2 and click Open.")
